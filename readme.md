@@ -285,13 +285,6 @@ npm run db:reset
 3. Set environment variable: `VITE_API_URL=https://your-railway-backend-url/api`.
 4. Vercel auto-detects Vite and deploys the application.
 
-## Common Issues
-
-- react-query peer dep error: use `@tanstack/react-query` not `react-query`.
-- tailwindcss init fails: install `tailwindcss@3` specifically, as version 4 dropped the init command.
-- MySQL connection refused: make sure the MySQL service is running using `sudo systemctl start mysqld`.
-- CORS error in browser: ensure `CLIENT_URL` in `.env` matches exactly where your frontend runs.
-
 ## Future Roadmap
 
 - AI-powered travel recommendations.
