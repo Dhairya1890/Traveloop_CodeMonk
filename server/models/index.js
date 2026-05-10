@@ -1,43 +1,63 @@
-'use strict';
+const { Sequelize } = require('sequelize')
+const config = require('../config/database')
+require('dotenv').config()
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
-const db = {};
+const env = process.env.NODE_ENV || 'development'
+const dbConfig = config[env]
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+  host: dbConfig.host,
+  dialect: dbConfig.dialect,
+  logging: dbConfig.logging,
+})
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+const db = {}
+db.sequelize = sequelize
+db.Sequelize = Sequelize
 
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
+// Import models
+db.User         = require('./User')(sequelize, Sequelize)
+db.Trip         = require('./Trip')(sequelize, Sequelize)
+db.Stop         = require('./Stop')(sequelize, Sequelize)
+db.City         = require('./City')(sequelize, Sequelize)
+db.Activity     = require('./Activity')(sequelize, Sequelize)
+db.StopActivity = require('./StopActivity')(sequelize, Sequelize)
+db.BudgetItem   = require('./BudgetItem')(sequelize, Sequelize)
+db.PackingItem  = require('./PackingItem')(sequelize, Sequelize)
+db.TripNote     = require('./TripNote')(sequelize, Sequelize)
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+// Associations
+// User
+db.User.hasMany(db.Trip, { foreignKey: 'user_id', onDelete: 'CASCADE' })
+db.Trip.belongsTo(db.User, { foreignKey: 'user_id' })
 
-module.exports = db;
+// Trip
+db.Trip.hasMany(db.Stop,        { foreignKey: 'trip_id', onDelete: 'CASCADE' })
+db.Trip.hasMany(db.BudgetItem,  { foreignKey: 'trip_id', onDelete: 'CASCADE' })
+db.Trip.hasMany(db.PackingItem, { foreignKey: 'trip_id', onDelete: 'CASCADE' })
+db.Trip.hasMany(db.TripNote,    { foreignKey: 'trip_id', onDelete: 'CASCADE' })
+
+db.Stop.belongsTo(db.Trip, { foreignKey: 'trip_id' })
+db.BudgetItem.belongsTo(db.Trip,  { foreignKey: 'trip_id' })
+db.PackingItem.belongsTo(db.Trip, { foreignKey: 'trip_id' })
+db.TripNote.belongsTo(db.Trip,    { foreignKey: 'trip_id' })
+
+// Stop
+db.Stop.belongsTo(db.City, { foreignKey: 'city_id' })
+db.City.hasMany(db.Stop,   { foreignKey: 'city_id' })
+
+// Stop <-> Activity (many to many through StopActivity)
+db.Stop.belongsToMany(db.Activity, { through: db.StopActivity, foreignKey: 'stop_id' })
+db.Activity.belongsToMany(db.Stop, { through: db.StopActivity, foreignKey: 'activity_id' })
+
+db.StopActivity.belongsTo(db.Stop,     { foreignKey: 'stop_id' })
+db.StopActivity.belongsTo(db.Activity, { foreignKey: 'activity_id' })
+
+// City
+db.City.hasMany(db.Activity, { foreignKey: 'city_id', onDelete: 'CASCADE' })
+db.Activity.belongsTo(db.City, { foreignKey: 'city_id' })
+
+// TripNote optional stop
+db.TripNote.belongsTo(db.Stop, { foreignKey: 'stop_id', constraints: false })
+
+module.exports = db
