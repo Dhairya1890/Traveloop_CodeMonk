@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './context/authContext'
+import Navbar from './components/Navbar'
 import './App.css'
 
 /* ── Pages ──────────────────────────────────────────────────── */
@@ -29,10 +30,19 @@ const queryClient = new QueryClient({
 })
 
 /* ── Route Guards ────────────────────────────────────────────── */
+function ProtectedLayout() {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  )
+}
+
 function PrivateRoute() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <AppLoader />
-  return isAuthenticated ? <Outlet /> : <Navigate to="/auth" replace />
+  return isAuthenticated ? <ProtectedLayout /> : <Navigate to="/auth" replace />
 }
 
 function PublicOnlyRoute() {
@@ -46,7 +56,7 @@ function AdminRoute() {
   if (loading) return <AppLoader />
   if (!isAuthenticated) return <Navigate to="/auth" replace />
   if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
-  return <Outlet />
+  return <ProtectedLayout />
 }
 
 /* ── Full-screen loader (shown while verifying token) ─────────── */

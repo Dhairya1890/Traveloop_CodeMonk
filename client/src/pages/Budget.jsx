@@ -3,16 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { budgetAPI, tripAPI } from '../api/api'
 
-const CATEGORIES = ['accommodation', 'transport', 'food', 'activities', 'shopping', 'health', 'other']
+const CATEGORIES = ['transport', 'stay', 'food', 'activity', 'shopping', 'other']
 
 const CAT_COLORS = {
-  accommodation: { bg: 'rgba(99,102,241,0.15)', color: '#a5b4fc', bar: '#6366f1' },
-  transport:     { bg: 'rgba(45,212,191,0.12)',  color: '#2dd4bf', bar: '#2dd4bf' },
-  food:          { bg: 'rgba(251,146,60,0.12)',  color: '#fb923c', bar: '#fb923c' },
-  activities:    { bg: 'rgba(255,107,69,0.12)',  color: '#ff6b45', bar: '#ff6b45' },
-  shopping:      { bg: 'rgba(244,114,182,0.12)', color: '#f472b6', bar: '#f472b6' },
-  health:        { bg: 'rgba(134,239,172,0.12)', color: '#86efac', bar: '#86efac' },
-  other:         { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', bar: '#94a3b8' },
+  transport:  { bg: 'rgba(45,212,191,0.12)',  color: '#2dd4bf', bar: '#2dd4bf' },
+  stay:       { bg: 'rgba(99,102,241,0.15)',  color: '#a5b4fc', bar: '#6366f1' },
+  food:       { bg: 'rgba(251,146,60,0.12)',  color: '#fb923c', bar: '#fb923c' },
+  activity:   { bg: 'rgba(255,107,69,0.12)',  color: '#ff6b45', bar: '#ff6b45' },
+  shopping:   { bg: 'rgba(244,114,182,0.12)', color: '#f472b6', bar: '#f472b6' },
+  other:      { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', bar: '#94a3b8' },
 }
 
 const Icons = {
@@ -56,7 +55,12 @@ function AddItemModal({ tripId, onClose }) {
           <div className="form-group">
             <label className="form-label">Category</label>
             <select className="input select" value={form.category} onChange={e => set('category', e.target.value)}>
-              {CATEGORIES.map(c => <option key={c} value={c} style={{ textTransform:'capitalize' }}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              <option value="transport">Transport</option>
+              <option value="stay">Stay / Accommodation</option>
+              <option value="food">Food & Drink</option>
+              <option value="activity">Activities</option>
+              <option value="shopping">Shopping</option>
+              <option value="other">Other</option>
             </select>
           </div>
           <div className="form-group">

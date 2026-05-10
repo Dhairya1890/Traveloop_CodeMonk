@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     avatar_url: {
-      type: DataTypes.STRING(500),
+      type: DataTypes.TEXT,
       defaultValue: null,
     },
     language_pref: {

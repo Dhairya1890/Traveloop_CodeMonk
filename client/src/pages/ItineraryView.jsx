@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { tripAPI, stopAPI, cityAPI, activityAPI } from '../api/api'
+import { tripAPI, stopAPI, cityAPI, activityAPI, budgetAPI } from '../api/api'
 import { Icons, fmtDate, stopDays, statusColor } from '../components/shared/itineraryUtils.jsx'
 
 /* ─────────────────────────────────────────────────────────────
@@ -293,9 +293,19 @@ export default function ItineraryView() {
     queryFn: () => stopAPI.listByTrip(tripId).then(r => r.data),
   })
 
+  const { data: budgetData } = useQuery({
+    queryKey: ['budget', tripId],
+    queryFn: () => budgetAPI.list(tripId).then(r => r.data),
+  })
+
   const sc = statusColor(trip?.status)
   const totalBudget = Number(trip?.total_budget || 0)
-  const activityCost = stops.reduce((s, stop) => s + (stop.Activities?.reduce((a, act) => a + Number(act.cost || 0), 0) || 0), 0)
+  // Activity cost = budget items under 'activity' category (reflects Budget page entries)
+  const activityBudgetCost = budgetData?.summary?.by_category?.activity?.actual
+    || budgetData?.summary?.by_category?.activity?.estimated
+    || 0
+  // Activity count = activities added to stops
+  const totalActivities = stops.reduce((s, st) => s + (st.Activities?.length || 0), 0)
 
   if (tripLoading) return (
     <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-base)' }}>
@@ -341,10 +351,10 @@ export default function ItineraryView() {
       <div style={{ background:'var(--bg-surface)', borderBottom:'1px solid var(--border-subtle)' }}>
         <div className="page-container" style={{ padding:'0.875rem 1.5rem', display:'flex', gap:'2rem', flexWrap:'wrap' }}>
           {[
-            { label:'Stops', value: stops.length },
-            { label:'Activities', value: stops.reduce((s,st) => s + (st.Activities?.length||0), 0) },
-            { label:'Budget', value: totalBudget > 0 ? `$${totalBudget.toLocaleString()}` : '—' },
-            { label:'Activities Cost', value: activityCost > 0 ? `$${activityCost.toLocaleString()}` : '—' },
+            { label:'Stops',            value: stops.length },
+            { label:'Activities',       value: totalActivities },
+            { label:'Budget',           value: totalBudget > 0 ? `$${totalBudget.toLocaleString()}` : '—' },
+            { label:'Activity Spend',   value: activityBudgetCost > 0 ? `$${Number(activityBudgetCost).toLocaleString()}` : '—' },
           ].map(({ label, value }) => (
             <div key={label}>
               <div style={{ fontSize:'0.7rem', fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{label}</div>

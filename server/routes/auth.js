@@ -20,5 +20,6 @@ router.post('/register', registerRules, validate, authController.register)
 router.post('/login',    loginRules,    validate, authController.login)
 router.get('/me',        auth,                    authController.me)
 router.patch('/me',      auth,                    authController.updateProfile)
+router.patch('/password', auth,                   authController.changePassword)
 
 module.exports = router
