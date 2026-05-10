@@ -349,8 +349,6 @@ client/
 
 ## Common Issues
 
-**`sequalize-cli` not found** — it's `sequelize` not `sequalize`.
-
 **react-query peer dep error** — use `@tanstack/react-query` not `react-query`.
 
 **tailwindcss init fails** — install `tailwindcss@3` specifically, v4 dropped the init command.
