@@ -26,6 +26,7 @@ app.use('/api/activities', require('./routes/activities'))
 app.use('/api/budget',     require('./routes/budget'))
 app.use('/api/packing',    require('./routes/packing'))
 app.use('/api/notes',      require('./routes/notes'))
+app.use('/api/community',  require('./routes/community'))
 app.use('/api/admin',      require('./routes/admin'))
 
 

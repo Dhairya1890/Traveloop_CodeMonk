@@ -25,6 +25,7 @@ db.StopActivity = require('./StopActivity')(sequelize, Sequelize)
 db.BudgetItem   = require('./BudgetItem')(sequelize, Sequelize)
 db.PackingItem  = require('./PackingItem')(sequelize, Sequelize)
 db.TripNote     = require('./TripNote')(sequelize, Sequelize)
+db.TripLike     = require('./TripLike')(sequelize, Sequelize)
 
 // Associations
 // User
@@ -41,6 +42,12 @@ db.Stop.belongsTo(db.Trip, { foreignKey: 'trip_id' })
 db.BudgetItem.belongsTo(db.Trip,  { foreignKey: 'trip_id' })
 db.PackingItem.belongsTo(db.Trip, { foreignKey: 'trip_id' })
 db.TripNote.belongsTo(db.Trip,    { foreignKey: 'trip_id' })
+
+// TripLike
+db.Trip.hasMany(db.TripLike,    { foreignKey: 'trip_id', onDelete: 'CASCADE' })
+db.User.hasMany(db.TripLike,    { foreignKey: 'user_id', onDelete: 'CASCADE' })
+db.TripLike.belongsTo(db.Trip,  { foreignKey: 'trip_id' })
+db.TripLike.belongsTo(db.User,  { foreignKey: 'user_id' })
 
 // Stop
 db.Stop.belongsTo(db.City, { foreignKey: 'city_id' })

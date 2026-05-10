@@ -107,4 +107,10 @@ export const adminAPI = {
   users:     () => api.get('/admin/users'),
 }
 
+/* ── Community endpoints ────────────────────────────────────── */
+export const communityAPI = {
+  feed:       (params) => api.get('/community', { params }),
+  toggleLike: (tripId) => api.post(`/community/${tripId}/like`),
+}
+
 export default api

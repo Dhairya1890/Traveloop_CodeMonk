@@ -17,6 +17,7 @@ import TripNotes        from './pages/TripNotes'
 import PublicItinerary  from './pages/PublicItinerary'
 import Profile          from './pages/Proflie'
 import AdminDashboard   from './pages/AdminDashboard'
+import Community        from './pages/Community'
 
 /* ── TanStack Query client ───────────────────────────────────── */
 const queryClient = new QueryClient({
@@ -112,6 +113,7 @@ export default function App() {
               <Route path="/trips/:id/packing"  element={<PackingChecklist />} />
               <Route path="/trips/:id/notes"    element={<TripNotes />} />
               <Route path="/activities"         element={<ActivitySearch />} />
+              <Route path="/community"          element={<Community />} />
               <Route path="/profile"            element={<Profile />} />
             </Route>
 
