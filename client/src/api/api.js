@@ -53,13 +53,11 @@ export const tripAPI = {
 
 /* ── Stop endpoints ────────────────────────────────────────── */
 export const stopAPI = {
-  list:           (tripId)       => api.get(`/stops?trip_id=${tripId}`),
-  create:         (data)         => api.post('/stops', data),
-  update:         (id, data)     => api.put(`/stops/${id}`, data),
-  remove:         (id)           => api.delete(`/stops/${id}`),
-  reorder:        (id, data)     => api.patch(`/stops/${id}/reorder`, data),
-  addActivity:    (id, actId)    => api.post(`/stops/${id}/activities`, { activity_id: actId }),
-  removeActivity: (id, actId)    => api.delete(`/stops/${id}/activities/${actId}`),
+  listByTrip:     (tripId)            => api.get(`/stops/trip/${tripId}`),
+  create:         (tripId, data)      => api.post(`/stops/trip/${tripId}`, data),
+  update:         (id, data)          => api.patch(`/stops/${id}`, data),
+  remove:         (id)                => api.delete(`/stops/${id}`),
+  reorder:        (tripId, stops)     => api.patch(`/stops/reorder/${tripId}`, { stops }),
 }
 
 /* ── City endpoints ────────────────────────────────────────── */
@@ -70,32 +68,36 @@ export const cityAPI = {
 
 /* ── Activity endpoints ────────────────────────────────────── */
 export const activityAPI = {
-  list: (params) => api.get('/activities', { params }),
-  get:  (id)     => api.get(`/activities/${id}`),
+  list:           (params)            => api.get('/activities', { params }),
+  listByCity:     (cityId, params)    => api.get(`/activities/city/${cityId}`, { params }),
+  get:            (id)                => api.get(`/activities/${id}`),
+  addToStop:      (stopId, data)      => api.post(`/activities/stop/${stopId}`, data),
+  removeFromStop: (stopId, actId)     => api.delete(`/activities/stop/${stopId}/${actId}`),
 }
 
 /* ── Budget endpoints ──────────────────────────────────────── */
 export const budgetAPI = {
-  list:   (tripId)    => api.get(`/budget?trip_id=${tripId}`),
-  create: (data)      => api.post('/budget', data),
-  update: (id, data)  => api.put(`/budget/${id}`, data),
-  remove: (id)        => api.delete(`/budget/${id}`),
+  list:   (tripId)       => api.get(`/budget/trip/${tripId}`),
+  create: (tripId, data) => api.post(`/budget/trip/${tripId}`, data),
+  update: (id, data)     => api.patch(`/budget/${id}`, data),
+  remove: (id)           => api.delete(`/budget/${id}`),
 }
 
 /* ── Packing endpoints ─────────────────────────────────────── */
 export const packingAPI = {
-  list:   (tripId)    => api.get(`/packing?trip_id=${tripId}`),
-  create: (data)      => api.post('/packing', data),
-  update: (id, data)  => api.put(`/packing/${id}`, data),
-  remove: (id)        => api.delete(`/packing/${id}`),
+  list:   (tripId)       => api.get(`/packing/trip/${tripId}`),
+  create: (tripId, data) => api.post(`/packing/trip/${tripId}`, data),
+  update: (id, data)     => api.patch(`/packing/${id}`, data),
+  remove: (id)           => api.delete(`/packing/${id}`),
+  reset:  (tripId)       => api.patch(`/packing/reset/${tripId}`),
 }
 
 /* ── Notes endpoints ───────────────────────────────────────── */
 export const notesAPI = {
-  list:   (tripId)    => api.get(`/notes?trip_id=${tripId}`),
-  create: (data)      => api.post('/notes', data),
-  update: (id, data)  => api.put(`/notes/${id}`, data),
-  remove: (id)        => api.delete(`/notes/${id}`),
+  list:   (tripId)       => api.get(`/notes/trip/${tripId}`),
+  create: (tripId, data) => api.post(`/notes/trip/${tripId}`, data),
+  update: (id, data)     => api.patch(`/notes/${id}`, data),
+  remove: (id)           => api.delete(`/notes/${id}`),
 }
 
 /* ── Admin endpoints ───────────────────────────────────────── */
