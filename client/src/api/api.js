@@ -49,6 +49,7 @@ export const tripAPI = {
   update:    (id, data)  => api.put(`/trips/${id}`, data),
   remove:    (id)        => api.delete(`/trips/${id}`),
   getPublic: (token)     => api.get(`/trips/public/${token}`),
+  copyTrip:  (token)     => api.post(`/trips/public/${token}/copy`),
 }
 
 /* ── Stop endpoints ────────────────────────────────────────── */

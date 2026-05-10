@@ -3,7 +3,7 @@ const { Op } = require('sequelize')
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { search, category, city_id, min_cost, max_cost } = req.query
+    const { search, category, city_id, min_cost, max_cost, max_duration } = req.query
 
     const where = {}
 
@@ -18,6 +18,10 @@ exports.getAll = async (req, res, next) => {
       where.cost = {}
       if (min_cost) where.cost[Op.gte] = parseFloat(min_cost)
       if (max_cost) where.cost[Op.lte] = parseFloat(max_cost)
+    }
+
+    if (max_duration) {
+      where.duration_minutes = { [Op.lte]: parseInt(max_duration) }
     }
 
     const activities = await Activity.findAll({

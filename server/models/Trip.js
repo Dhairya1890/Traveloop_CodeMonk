@@ -1,3 +1,5 @@
+const { v4: uuidv4 } = require('uuid')
+
 module.exports = (sequelize, DataTypes) => {
   const Trip = sequelize.define('Trip', {
     id: {
@@ -40,6 +42,11 @@ module.exports = (sequelize, DataTypes) => {
     status: {
       type: DataTypes.ENUM('planning', 'ongoing', 'completed'),
       defaultValue: 'planning',
+    },
+    share_token: {
+      type: DataTypes.STRING(64),
+      unique: true,
+      defaultValue: () => uuidv4().replace(/-/g, ''),
     },
   }, {
     tableName: 'trips',

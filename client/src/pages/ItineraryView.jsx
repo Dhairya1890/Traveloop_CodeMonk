@@ -196,7 +196,7 @@ function ActivityPanel({ stop, tripId }) {
 /* ─────────────────────────────────────────────────────────────
    STOP CARD
 ───────────────────────────────────────────────────────────── */
-function StopCard({ stop, index, tripId, trip, totalStops }) {
+function StopCard({ stop, index, tripId, trip, totalStops, onMoveUp, onMoveDown }) {
   const qc = useQueryClient()
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -253,12 +253,36 @@ function StopCard({ stop, index, tripId, trip, totalStops }) {
             )}
           </div>
           {!editing && (
-            <div style={{ display:'flex', gap:'0.25rem' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)} style={{ padding:'0.375rem' }} title="Edit stop"><Icons.Edit /></button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setExpanded(p => !p)} style={{ padding:'0.375rem', color: expanded ? 'var(--color-coral-400)' : undefined }} title="Activities">
-                <Icons.Plus />
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => removeMut.mutate()} style={{ padding:'0.375rem', color:'#f87171' }} title="Remove stop" disabled={removeMut.isPending}><Icons.Trash /></button>
+            <div style={{ display:'flex', flexDirection:'column', gap:'0.15rem' }}>
+              {/* Reorder */}
+              <div style={{ display:'flex', gap:'0.15rem', marginBottom:'0.25rem' }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={onMoveUp}
+                  disabled={index === 0}
+                  style={{ padding:'0.25rem', opacity: index === 0 ? 0.25 : 1 }}
+                  title="Move up"
+                >
+                  <Icons.ChevronUp />
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={onMoveDown}
+                  disabled={index === totalStops - 1}
+                  style={{ padding:'0.25rem', opacity: index === totalStops - 1 ? 0.25 : 1 }}
+                  title="Move down"
+                >
+                  <Icons.ChevronDown />
+                </button>
+              </div>
+              {/* Actions */}
+              <div style={{ display:'flex', gap:'0.15rem' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditing(true)} style={{ padding:'0.375rem' }} title="Edit stop"><Icons.Edit /></button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setExpanded(p => !p)} style={{ padding:'0.375rem', color: expanded ? 'var(--color-coral-400)' : undefined }} title="Activities">
+                  <Icons.Plus />
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => removeMut.mutate()} style={{ padding:'0.375rem', color:'#f87171' }} title="Remove stop" disabled={removeMut.isPending}><Icons.Trash /></button>
+              </div>
             </div>
           )}
         </div>
@@ -276,12 +300,123 @@ function StopCard({ stop, index, tripId, trip, totalStops }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   CATEGORY CONFIG
+───────────────────────────────────────────────────────────── */
+const CAT = {
+  sightseeing: { icon: '🏛', color: '#a78bfa' },
+  food:        { icon: '🍜', color: '#fb923c' },
+  adventure:   { icon: '🏃', color: '#34d399' },
+  shopping:    { icon: '🛍', color: '#f472b6' },
+  nightlife:   { icon: '🌙', color: '#60a5fa' },
+  culture:     { icon: '🎭', color: '#fbbf24' },
+  nature:      { icon: '🌿', color: '#4ade80' },
+  transport:   { icon: '🚆', color: '#94a3b8' },
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DAY-WISE VIEW
+───────────────────────────────────────────────────────────── */
+function DayWiseView({ trip, stops }) {
+  if (!stops.length) return (
+    <div style={{ textAlign:'center', padding:'4rem 2rem', color:'var(--text-muted)' }}>No stops yet — switch to Builder to add cities.</div>
+  )
+
+  let dayNum = 0
+  const WDAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const MONTH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+  const fmtDay = (d) => { const x = new Date(d + 'T00:00:00'); return `${WDAY[x.getDay()]}, ${MONTH[x.getMonth()]} ${x.getDate()}` }
+
+  const totalTripDays = Math.ceil((new Date(trip.end_date) - new Date(trip.start_date)) / 86400000) + 1
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:'1.75rem' }}>
+      {stops.map((stop, stopIdx) => {
+        // Build day list for this stop
+        const arr = new Date(stop.arrival_date + 'T00:00:00')
+        const dep = new Date(stop.departure_date + 'T00:00:00')
+        const stopDayList = []
+        for (let d = new Date(arr); d <= dep; d.setDate(d.getDate() + 1))
+          stopDayList.push(new Date(d).toISOString().slice(0,10))
+
+        const totalCost = (stop.Activities || []).reduce((s,a) => s + Number(a.cost || 0), 0)
+        const totalMins = (stop.Activities || []).reduce((s,a) => s + Number(a.duration_minutes || 0), 0)
+        const startDay = dayNum + 1
+        dayNum += stopDayList.length
+
+        return (
+          <div key={stop.id} style={{ borderRadius:'var(--radius-lg)', overflow:'hidden', border:'1px solid var(--border-subtle)', background:'var(--bg-surface)' }}>
+            {/* ── City header ──────────────────────────── */}
+            <div style={{ padding:'1rem 1.25rem', background:'linear-gradient(135deg, rgba(255,107,69,0.1), rgba(45,212,191,0.06))', borderBottom:'1px solid var(--border-subtle)', display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+              <div style={{ width:'36px', height:'36px', borderRadius:'50%', background:'var(--gradient-accent)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontFamily:'var(--font-display)', fontWeight:800, fontSize:'0.875rem', flexShrink:0 }}>{stopIdx+1}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:'1.0625rem', color:'var(--text-primary)' }}>
+                  {stop.City?.name} <span style={{ fontSize:'0.8125rem', color:'var(--text-muted)', fontWeight:400 }}>· {stop.City?.country}</span>
+                </div>
+                <div style={{ fontSize:'0.775rem', color:'var(--text-muted)', marginTop:'0.1rem' }}>
+                  {fmtDay(stop.arrival_date)} → {fmtDay(stop.departure_date)} · Days {startDay}–{dayNum} · {stopDayList.length} night{stopDayList.length!==1?'s':''}
+                </div>
+              </div>
+              <div style={{ display:'flex', gap:'1rem' }}>
+                {totalCost > 0 && <div style={{ textAlign:'center' }}><div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--text-muted)' }}>Est. Cost</div><div style={{ fontFamily:'var(--font-display)', fontWeight:700, color:'var(--color-coral-400)' }}>${totalCost.toLocaleString()}</div></div>}
+                {totalMins > 0 && <div style={{ textAlign:'center' }}><div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--text-muted)' }}>Activities</div><div style={{ fontFamily:'var(--font-display)', fontWeight:700, color:'var(--color-teal-400)' }}>{stop.Activities?.length || 0}</div></div>}
+              </div>
+            </div>
+
+            {/* ── Activities block (shown once per stop) ── */}
+            {stop.Activities?.length > 0 && (
+              <div style={{ padding:'0.875rem 1.25rem', borderBottom:'1px solid var(--border-subtle)', background:'rgba(255,255,255,0.015)' }}>
+                <div style={{ fontSize:'0.7rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'var(--text-muted)', marginBottom:'0.625rem' }}>Planned Activities</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'0.5rem' }}>
+                  {stop.Activities.map(a => {
+                    const cat = CAT[a.category] || CAT.sightseeing
+                    return (
+                      <div key={a.id} style={{ display:'flex', alignItems:'center', gap:'0.75rem', padding:'0.625rem 0.875rem', borderRadius:'var(--radius-md)', background:'rgba(255,255,255,0.035)', border:'1px solid var(--border-subtle)' }}>
+                        <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{cat.icon}</span>
+                        <span style={{ flex:1, fontWeight:500, fontSize:'0.875rem', color:'var(--text-primary)' }}>{a.name}</span>
+                        <div style={{ display:'flex', gap:'0.5rem', alignItems:'center', flexShrink:0 }}>
+                          {a.category && <span style={{ padding:'0.15rem 0.5rem', borderRadius:'9999px', fontSize:'0.7rem', fontWeight:600, textTransform:'capitalize', background:`${cat.color}18`, color:cat.color, border:`1px solid ${cat.color}30` }}>{a.category}</span>}
+                          {Number(a.duration_minutes) > 0 && <span style={{ display:'flex', alignItems:'center', gap:'0.2rem', fontSize:'0.775rem', color:'var(--text-muted)' }}><Icons.Clock />{a.duration_minutes < 60 ? `${a.duration_minutes}m` : `${Math.floor(a.duration_minutes/60)}h${a.duration_minutes%60?` ${a.duration_minutes%60}m`:''}`}</span>}
+                          {Number(a.cost) > 0 && <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:'0.8125rem', color:'var(--color-coral-400)' }}>${Number(a.cost).toFixed(0)}</span>}
+                          {Number(a.cost) === 0 && <span style={{ fontSize:'0.775rem', color:'#4ade80', fontWeight:600 }}>Free</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Day rows ─────────────────────────────── */}
+            <div style={{ display:'flex', flexDirection:'column' }}>
+              {stopDayList.map((dateStr, di) => (
+                <div key={dateStr} style={{ display:'flex', alignItems:'center', gap:'0', borderBottom: di < stopDayList.length-1 ? '1px solid var(--border-subtle)' : 'none', minHeight:'44px' }}>
+                  <div style={{ width:'64px', padding:'0.625rem 0.875rem', textAlign:'center', borderRight:'1px solid var(--border-subtle)', flexShrink:0, background:'rgba(255,255,255,0.015)' }}>
+                    <div style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:'0.8125rem', color:'var(--color-coral-400)' }}>Day {startDay + di}</div>
+                  </div>
+                  <div style={{ padding:'0.5rem 1rem', fontSize:'0.8125rem', color:'var(--text-secondary)' }}>
+                    {fmtDay(dateStr)}
+                    {di === 0 && stop.notes && <span style={{ marginLeft:'0.75rem', fontStyle:'italic', color:'var(--text-muted)' }}>— {stop.notes}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
    MAIN — ItineraryView
 ───────────────────────────────────────────────────────────── */
 export default function ItineraryView() {
   const { id: tripId } = useParams()
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [showAddStop, setShowAddStop] = useState(false)
+  const [viewMode, setViewMode] = useState('builder') // 'builder' | 'daywise'
 
   const { data: trip, isLoading: tripLoading } = useQuery({
     queryKey: ['trip', tripId],
@@ -293,6 +428,19 @@ export default function ItineraryView() {
     queryFn: () => stopAPI.listByTrip(tripId).then(r => r.data),
   })
 
+  const reorderMut = useMutation({
+    mutationFn: (ordered) => stopAPI.reorder(tripId, ordered),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['stops', tripId] }),
+  })
+
+  const moveStop = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= stops.length) return
+    const reordered = [...stops]
+    const [moved] = reordered.splice(fromIndex, 1)
+    reordered.splice(toIndex, 0, moved)
+    const payload = reordered.map((s, i) => ({ id: s.id, order_index: i }))
+    reorderMut.mutate(payload)
+  }
   const { data: budgetData } = useQuery({
     queryKey: ['budget', tripId],
     queryFn: () => budgetAPI.list(tripId).then(r => r.data),
@@ -372,21 +520,48 @@ export default function ItineraryView() {
       {/* ── Main content ─────────────────────────────────────── */}
       <div className="page-container" style={{ padding:'2rem 1.5rem' }}>
         {/* Section header */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.5rem' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.5rem', flexWrap:'wrap', gap:'0.75rem' }}>
           <div>
             <h2 className="text-headline">Itinerary</h2>
             <p style={{ fontSize:'0.8125rem', color:'var(--text-muted)', marginTop:'0.1rem' }}>
               {stops.length === 0 ? 'Add cities to start building your trip' : `${stops.length} stop${stops.length !== 1 ? 's' : ''} planned`}
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowAddStop(true)}>
-            <Icons.Plus /> Add Stop
-          </button>
+          <div style={{ display:'flex', gap:'0.625rem', alignItems:'center' }}>
+            {/* View toggle */}
+            <div style={{ display:'flex', borderRadius:'var(--radius-md)', overflow:'hidden', border:'1px solid var(--border-default)', background:'rgba(255,255,255,0.03)' }}>
+              <button
+                onClick={() => setViewMode('builder')}
+                style={{ padding:'0.4rem 0.875rem', fontSize:'0.8125rem', fontWeight:600, border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.35rem', transition:'background 0.15s, color 0.15s',
+                  background: viewMode==='builder' ? 'var(--gradient-accent)' : 'transparent',
+                  color: viewMode==='builder' ? '#fff' : 'var(--text-muted)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Builder
+              </button>
+              <button
+                onClick={() => setViewMode('daywise')}
+                style={{ padding:'0.4rem 0.875rem', fontSize:'0.8125rem', fontWeight:600, border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.35rem', transition:'background 0.15s, color 0.15s',
+                  background: viewMode==='daywise' ? 'var(--gradient-accent)' : 'transparent',
+                  color: viewMode==='daywise' ? '#fff' : 'var(--text-muted)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Day View
+              </button>
+            </div>
+            {viewMode === 'builder' && (
+              <button className="btn btn-primary" onClick={() => setShowAddStop(true)}>
+                <Icons.Plus /> Add Stop
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Timeline */}
+        {/* Content */}
         {stopsLoading ? (
           <div style={{ display:'flex', justifyContent:'center', padding:'3rem' }}><div className="spinner" style={{ width:'1.5rem', height:'1.5rem' }} /></div>
+        ) : viewMode === 'daywise' ? (
+          <DayWiseView trip={trip} stops={stops} />
         ) : stops.length === 0 ? (
           <div style={{ textAlign:'center', padding:'4rem 2rem', borderRadius:'var(--radius-lg)', border:'2px dashed var(--border-default)', background:'rgba(255,255,255,0.02)' }}>
             <p style={{ color:'var(--text-muted)', fontSize:'0.9375rem', marginBottom:'1rem' }}>No stops yet. Add your first city!</p>
@@ -395,7 +570,16 @@ export default function ItineraryView() {
         ) : (
           <div style={{ paddingLeft:'0.5rem' }}>
             {stops.map((stop, i) => (
-              <StopCard key={stop.id} stop={stop} index={i} tripId={tripId} trip={trip} totalStops={stops.length} />
+              <StopCard
+                key={stop.id}
+                stop={stop}
+                index={i}
+                tripId={tripId}
+                trip={trip}
+                totalStops={stops.length}
+                onMoveUp={() => moveStop(i, i - 1)}
+                onMoveDown={() => moveStop(i, i + 1)}
+              />
             ))}
           </div>
         )}

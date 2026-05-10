@@ -1,4 +1,5 @@
 const { Trip, Stop, City, Activity, BudgetItem, User } = require('../models')
+const { v4: uuidv4 } = require('uuid')
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -111,7 +112,7 @@ exports.remove = async (req, res, next) => {
 exports.getPublic = async (req, res, next) => {
   try {
     const trip = await Trip.findOne({
-      where: { id: req.params.id, is_public: true },
+      where: { share_token: req.params.token, is_public: true },
       include: [
         {
           model: Stop,
@@ -133,6 +134,64 @@ exports.getPublic = async (req, res, next) => {
     }
 
     res.json(trip)
+  } catch (err) {
+    next(err)
+  }
+}
+
+/* ── Copy Trip ──────────────────────────────────────────────────
+   Duplicates a public trip (title, dates, description, cover,
+   and all stops) for the authenticated requesting user.
+   Returns the new trip.
+─────────────────────────────────────────────────────────────── */
+exports.copyTrip = async (req, res, next) => {
+  try {
+    const original = await Trip.findOne({
+      where: { share_token: req.params.token, is_public: true },
+      include: [
+        {
+          model: Stop,
+          include: [
+            { model: City },
+            { model: Activity, through: { attributes: ['scheduled_time', 'notes'] } }
+          ],
+          order: [['order_index', 'ASC']]
+        }
+      ]
+    })
+
+    if (!original) {
+      return res.status(404).json({ error: 'Trip not found or not public' })
+    }
+
+    // Create new trip for requesting user
+    const newTrip = await Trip.create({
+      user_id: req.user.id,
+      title: `Copy of ${original.title}`,
+      description: original.description,
+      start_date: original.start_date,
+      end_date: original.end_date,
+      cover_photo: original.cover_photo,
+      total_budget: original.total_budget,
+      is_public: false,
+      status: 'planning',
+    })
+
+    // Duplicate all stops (without activities — activities are city-level shared resources)
+    if (original.Stops?.length > 0) {
+      await Promise.all(original.Stops.map(s =>
+        Stop.create({
+          trip_id: newTrip.id,
+          city_id: s.city_id,
+          arrival_date: s.arrival_date,
+          departure_date: s.departure_date,
+          notes: s.notes,
+          order_index: s.order_index,
+        })
+      ))
+    }
+
+    res.status(201).json({ trip: newTrip, message: 'Trip copied to your account!' })
   } catch (err) {
     next(err)
   }
