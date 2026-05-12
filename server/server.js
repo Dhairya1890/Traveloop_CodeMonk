@@ -1,3 +1,7 @@
+console.log('MYSQL_URL:', process.env.MYSQL_URL)
+console.log('NODE_ENV:', process.env.NODE_ENV)
+
+
 const app = require('./app');
 require('dotenv').config();
 
